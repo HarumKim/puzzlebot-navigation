@@ -1,27 +1,28 @@
 robot_params:
-  max_linear_speed: 0.15   # m/s
-  max_angular_speed: 1.4     # rad/s
+   max_linear_speed: 0.5   # m/s
+   max_angular_speed: 1.6    # rad/s
 
-
-# Cuadrado
-#waypoints:
-#  - {x: 0.0, y: 0.0, theta: 0.0, time: 0.0}                # inicio
- # - {x: 2.0, y: 0.0, theta: 0.0, time: 13.5}               # recta horizontal
-  #- {x: 2.0, y: 0.0, theta: 1.5708, time: 16.5}            # giro (3 s)
-  #- {x: 2.0, y: 2.0, theta: 1.5708, time: 30.0}            # recta vertical
-  #- {x: 2.0, y: 2.0, theta: 3.1416, time: 33.0}            # giro (3 s)
-  #- {x: 0.0, y: 2.0, theta: 3.1416, time: 46.5}            # recta izquierda
-  #- {x: 0.0, y: 2.0, theta: -1.5708, time: 49.5}           # giro (3 s)
-  #- {x: 0.0, y: 0.0, theta: -1.5708, time: 63.0}           # recta hacia abajo
-  #- {x: 0.0, y: 0.0, theta: 0.0, time: 66.0}               # giro final
-
-
-# Triangulo
+#ESTRELLA
 waypoints:
-  - {x: 0.0, y: 0.0, theta: 0.0, time: 0.0}                 # A - inicio
-  - {x: 2.0, y: 0.0, theta: 0.0, time: 13.5}                # B - recta derecha
-  - {x: 2.0, y: 0.0, theta: 2.094, time: 16.5}              # giro (3 s aprox 120°)
-  - {x: 1.0, y: 1.732, theta: 2.094, time: 27.5}            # C - recta inclinada
-  - {x: 1.0, y: 1.732, theta: -2.094, time: 30.5}           # giro hacia A
-  - {x: 0.0, y: 0.0, theta: -2.094, time: 41.5}             # A - regreso
-  - {x: 0.0, y: 0.0, theta: 0.0, time: 44.5}                # giro final
+  - {x: 0.0, y: 0.0, theta: 0.0}             # Centro - inicio
+  - {x: 0.2, y: 0.5, theta: null}             # Arriba
+  - {x: 0.4, y: 0.0, theta: null}             # Punta derecha
+  - {x: 0.0, y: 0.3, theta: null}             # Arriba izquierda
+  - {x: 0.4, y: 0.3, theta: null}             # Derecha arriba
+  - {x: 0.0, y: 0.0, theta: 0.0}              # Centro otra vez
+
+## ROMBO
+#waypoints:
+#  - {x: 0.0, y: 0.0, theta: 0.0}          # Inicio mirando derecha
+#  - {x: 0.25, y: 0.25, theta: null}        # Arriba-derecha
+#  - {x: 0.5, y: 0.0, theta: null}          # Punta derecha
+#  - {x: 0.25, y: -0.25, theta: null}       # Abajo-derecha
+#  - {x: 0.0, y: 0.0, theta: 0.0}           # Regreso al inicio
+
+## TRIANGULO
+#waypoints:
+#  - {x: 0.0, y: 0.0, theta: 0.0}            # A - inicio, mirando hacia la derecha
+#  - {x: 1.0, y: 0.0, theta: null}           # B - girar hacia arriba en 120°
+#  - {x: 0.5, y: 0.866, theta: null}        # C - girar hacia abajo-izquierda
+#  - {x: 0.0, y: 0.0, theta: 0.0}             # A - regreso al inicio
+

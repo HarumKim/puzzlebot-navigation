@@ -28,7 +28,10 @@ setup(
         'console_scripts': [
             'open_loop_ctrl = puzzlebot_control.open_loop_ctrl:main',
             'path_gen = puzzlebot_control.path_gen:main',
-            'open_ctrl = puzzlebot_control.open_ctrl:main'
+            'open_ctrl = puzzlebot_control.open_ctrl:main',
+            'odometry = puzzlebot_control.odometry:main',
+            'close_loop_ctrl = puzzlebot_control.close_loop_ctrl:main',
+            'path_gen_close = puzzlebot_control.path_gen_close:main'
         ],
     },
 )
