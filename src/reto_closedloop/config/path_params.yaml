@@ -1,0 +1,17 @@
+robot_params:
+   max_linear_speed: 0.15   # m/s
+   max_angular_speed: 1.4     # rad/s
+
+#CLOSED LOOP
+## CUADRADO
+#waypoints:
+  #- {x: 0.0, y: 0.0, theta: 0.0}       # derecha
+  #- {x: 1.0, y: 0.0, theta: 1.57}      # arriba
+  #- {x: 1.0, y: 1.0, theta: 3.14}      # izquierda
+  #- {x: 0.0, y: 1.0, theta: -1.57}     # abajo
+
+## TRIÁNGULO
+waypoints:
+  - {x: 0.0, y: 0.0, theta: 0.0}             # A - inicio
+  - {x: 1.0, y: 0.0, theta: null}            # B - derecha
+  - {x: 0.5, y: 0.866, theta: null}          # C - arriba en ángulo
