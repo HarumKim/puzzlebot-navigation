@@ -1,17 +1,28 @@
 robot_params:
-   max_linear_speed: 0.15   # m/s
-   max_angular_speed: 1.4     # rad/s
+   max_linear_speed: 0.5   # m/s
+   max_angular_speed: 1.6    # rad/s
 
-#CLOSED LOOP
-## CUADRADO
-#waypoints:
-  #- {x: 0.0, y: 0.0, theta: 0.0}       # derecha
-  #- {x: 1.0, y: 0.0, theta: 1.57}      # arriba
-  #- {x: 1.0, y: 1.0, theta: 3.14}      # izquierda
-  #- {x: 0.0, y: 1.0, theta: -1.57}     # abajo
-
-## TRIÁNGULO
+#ESTRELLA
 waypoints:
-  - {x: 0.0, y: 0.0, theta: 0.0}             # A - inicio
-  - {x: 1.0, y: 0.0, theta: null}            # B - derecha
-  - {x: 0.5, y: 0.866, theta: null}          # C - arriba en ángulo
+  - {x: 0.0, y: 0.0, theta: 0.0}             # Centro - inicio
+  - {x: 0.2, y: 0.5, theta: null}             # Arriba
+  - {x: 0.4, y: 0.0, theta: null}             # Punta derecha
+  - {x: 0.0, y: 0.3, theta: null}             # Arriba izquierda
+  - {x: 0.4, y: 0.3, theta: null}             # Derecha arriba
+  - {x: 0.0, y: 0.0, theta: 0.0}              # Centro otra vez
+
+## ROMBO
+#waypoints:
+#  - {x: 0.0, y: 0.0, theta: 0.0}          # Inicio mirando derecha
+#  - {x: 0.25, y: 0.25, theta: null}        # Arriba-derecha
+#  - {x: 0.5, y: 0.0, theta: null}          # Punta derecha
+#  - {x: 0.25, y: -0.25, theta: null}       # Abajo-derecha
+#  - {x: 0.0, y: 0.0, theta: 0.0}           # Regreso al inicio
+
+## TRIANGULO
+#waypoints:
+#  - {x: 0.0, y: 0.0, theta: 0.0}            # A - inicio, mirando hacia la derecha
+#  - {x: 1.0, y: 0.0, theta: null}           # B - girar hacia arriba en 120°
+#  - {x: 0.5, y: 0.866, theta: null}        # C - girar hacia abajo-izquierda
+#  - {x: 0.0, y: 0.0, theta: 0.0}             # A - regreso al inicio
+
