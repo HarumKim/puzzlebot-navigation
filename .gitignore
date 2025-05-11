@@ -4,3 +4,14 @@ log/
 *.pyc
 __pycache__/
 .colcon/
+src/.vscode/
+src/Coppelia/
+src/SimExeWin/
+src/act1_2/
+src/act1_3.ttt
+src/mi_robot_sim/
+src/mini3/
+src/path_pkg/
+src/puzzlebot_control/
+src/py_pubsub/
+src/retroVisual.ttt
