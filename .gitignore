@@ -1,10 +1,16 @@
+# Ignorar archivos generados
 build/
 install/
 log/
 *.pyc
 __pycache__/
 .colcon/
+
+# Ignorar configuraciones del editor
+.vscode/
 src/.vscode/
+
+# Ignorar paquetes y archivos innecesarios
 src/Coppelia/
 src/SimExeWin/
 src/act1_2/
