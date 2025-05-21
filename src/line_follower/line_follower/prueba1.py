@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -26,6 +27,7 @@ class SmartFollower(Node):
         self.bridge = CvBridge()
 
         # Estado del semáforo
+        self.light_sub = self.create_subscription(String, '/light', self.light_callback, 10)
         self.green_light_received = False
         self.light_color = "UNKNOWN"
 
@@ -53,11 +55,6 @@ class SmartFollower(Node):
     def image_callback(self, msg):
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        self.light_color = self.detect_traffic_light(hsv)
-        if self.light_color == "GREEN":
-            self.green_light_received = True
-
         throttle, yaw = self.follow_line(frame)
 
         if not self.green_light_received:
@@ -74,22 +71,13 @@ class SmartFollower(Node):
         twist.angular.z = float(yaw)
         self.cmd_pub.publish(twist)
 
-    def detect_traffic_light(self, hsv_img):
-        red1 = cv2.inRange(hsv_img, (0, 120, 70), (10, 255, 255))
-        red2 = cv2.inRange(hsv_img, (170, 120, 70), (180, 255, 255))
-        red = red1 | red2
+    def light_callback(self, msg):
+        if msg.data in ["RED", "YELLOW", "GREEN"]:
+            self.light_color = msg.data
+            if self.light_color == "GREEN":
+                self.green_light_received = True
 
-        yellow = cv2.inRange(hsv_img, (20, 100, 100), (40, 255, 255))
-        green = cv2.inRange(hsv_img, (36, 100, 50), (85, 255, 255))
 
-        if cv2.countNonZero(green) > 300:
-            return "GREEN"
-        elif cv2.countNonZero(yellow) > 300:
-            return "YELLOW"
-        elif cv2.countNonZero(red) > 300:
-            return "RED"
-        else:
-            return "UNKNOWN"
 
     def follow_line(self, frame):
         if frame is None:
@@ -97,11 +85,7 @@ class SmartFollower(Node):
 
         h, w = frame.shape[:2]
         roi_height_start = int(h * 0.6)
-        roi_width_margin = 50
-        x1 = roi_width_margin
-        x2 = w - roi_width_margin
         roi = frame[roi_height_start:, 0:]
-        #roi = frame[roi_height_start:, x1:x2]
 
         frame_center_x = w / 2
 
@@ -137,8 +121,41 @@ class SmartFollower(Node):
             align_thres = 0.15
             throttle = self.max_throttle * ((alignment - align_thres) / (1 - align_thres)) if alignment >= align_thres else 0
 
-            self.get_logger().info(f"[THROTTLE] alignment={alignment:.3f}, align_thres=0.3, raw_throttle={throttle:.3f}")
-            self.get_logger().info(f"[CMD] throttle_limited={throttle:.3f}, yaw_limited={yaw:.3f}")
+            # -------------------------------
+            # CÁLCULO FINAL DE VELOCIDADES
+            # -------------------------------
+
+            combined_error = abs(yaw)
+            cross_error = abs(normalized_x)
+
+            # Lógica de velocidad basada en color del semáforo
+            if self.light_color == "RED":
+                throttle = 0.0
+                yaw = 0.0
+            elif self.light_color == "YELLOW":
+                throttle = max(min(throttle, 0.05), -0.05)
+                yaw = max(min(yaw, 0.5), -0.5)
+            elif self.light_color == "GREEN":
+                throttle = max(min(throttle, 0.1), -0.1)
+                yaw = max(min(yaw, 1.0), -1.0)
+            else:
+                throttle = 0.0
+                yaw = 0.0
+
+            # Reglas adicionales de seguridad
+            #if combined_error > math.radians(45):
+            #    throttle = 0.0
+            #elif combined_error > math.radians(20):
+            #    throttle *= 0.3
+            #
+            #if cross_error > 0.05:
+            #    throttle = 0.0
+
+            self.get_logger().info(f"[ADAPTIVE] light={self.light_color}, error={combined_error:.3f}, x_error={cross_error:.3f}, throttle={throttle:.3f}, yaw={yaw:.3f}")
+
+
+            #self.get_logger().info(f"[THROTTLE] alignment={alignment:.3f}, align_thres=0.3, raw_throttle={throttle:.3f}")
+            #self.get_logger().info(f"[CMD] throttle_limited={throttle:.3f}, yaw_limited={yaw:.3f}")
 
 
 

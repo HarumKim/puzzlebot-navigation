@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'prueba1 = line_follower.prueba1:main',
+            'light_detector = line_follower.light_detector:main',
         ],
     },
 )

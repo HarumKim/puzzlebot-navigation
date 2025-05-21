@@ -54,6 +54,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python nodes
 install(PROGRAMS
   line_follower/prueba1.py
+  line_follower/light_detector.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
