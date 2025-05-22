@@ -26,7 +26,7 @@ def generate_launch_description():
                 'python3',
                 os.path.join(
                     os.getenv('HOME'),
-                    'ros2_ws', 'src', 'line_follower', 'line_follower', 'prueba1.py'
+                    'ros2_ws', 'src', 'line_follower', 'line_follower', 'line_follower.py'
                 )
             ],
             output='screen'

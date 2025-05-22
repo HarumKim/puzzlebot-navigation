@@ -10,11 +10,16 @@ import numpy as np
 import math
 import time
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
+from custom_interfaces.srv import SetProcessBool
 
 class SmartFollower(Node):
     def __init__(self):
         super().__init__('smart_follower')
         self.debug = True
+
+        # Servicio para habilitar/deshabilitar el seguimiento
+        self.simulation_running = False
+        self.srv = self.create_service(SetProcessBool, 'EnableProcess', self.set_process_callback)
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         qos_profile = QoSProfile(
@@ -29,7 +34,7 @@ class SmartFollower(Node):
         # Estado del semáforo
         self.light_sub = self.create_subscription(String, '/light', self.light_callback, 10)
         self.green_light_received = False
-        self.current_light_color = "RED"  # Valor inicial seguro
+        self.light_color = "UNKNOWN"
 
         # PID embebido
         self.Kp = 0.8
@@ -52,7 +57,21 @@ class SmartFollower(Node):
         if self.debug:
             cv2.namedWindow("Línea - DEBUG", cv2.WINDOW_NORMAL)
 
+    def set_process_callback(self, request, response):
+        self.simulation_running = request.enable
+        if request.enable:
+            self.get_logger().info("🟢 Proceso de seguimiento activado")
+            response.message = "Simulation Started Successfully"
+        else:
+            self.get_logger().info("🔴 Proceso de seguimiento detenido")
+            response.message = "Simulation Stopped Successfully"
+        response.success = True
+        return response
+
     def image_callback(self, msg):
+        if not self.simulation_running:
+            return
+
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
         throttle, yaw = self.follow_line(frame)
@@ -72,10 +91,8 @@ class SmartFollower(Node):
 
     def light_callback(self, msg):
         if msg.data in ["RED", "YELLOW", "GREEN"]:
-            if msg.data != self.current_light_color:
-                self.get_logger().info(f"🚦 Cambio de luz: {self.current_light_color} → {msg.data}")
-            self.current_light_color = msg.data
-            if self.current_light_color == "GREEN":
+            self.light_color = msg.data
+            if self.light_color == "GREEN":
                 self.green_light_received = True
 
     def follow_line(self, frame):
@@ -85,7 +102,6 @@ class SmartFollower(Node):
         h, w = frame.shape[:2]
         roi_height_start = int(h * 0.6)
         roi = frame[roi_height_start:, 0:]
-
         frame_center_x = w / 2
 
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -101,17 +117,13 @@ class SmartFollower(Node):
             def line_score(c):
                 _, _, angle, cx, cy = self.get_contour_line(c)
                 center_score = 1.0 - (abs(cx - frame_center_x) / frame_center_x)
-                max_angle = 80
-                angle_score = 1.0 - min(abs(angle), max_angle) / max_angle
-                total_score = (self.center_weight * center_score) + (self.angle_weight * angle_score)
-                return total_score
+                angle_score = 1.0 - min(abs(angle), 80) / 80
+                return (self.center_weight * center_score) + (self.angle_weight * angle_score)
 
             scored_contours = [(c, line_score(c)) for c in contours]
             scored_contours.sort(key=lambda x: x[1], reverse=True)
 
             line_contour = scored_contours[0][0]
-            best_score = scored_contours[0][1]
-
             _, _, angle, cx, cy = self.get_contour_line(line_contour)
             normalized_x = (cx - frame_center_x) / frame_center_x
             yaw = self.compute_pid(normalized_x)
@@ -120,45 +132,29 @@ class SmartFollower(Node):
             align_thres = 0.15
             throttle = self.max_throttle * ((alignment - align_thres) / (1 - align_thres)) if alignment >= align_thres else 0
 
-            # Lógica de velocidad basada en color del semáforo
-            if self.current_light_color == "RED":
+            if self.light_color == "RED":
                 throttle = 0.0
                 yaw = 0.0
-            elif self.current_light_color == "YELLOW":
+            elif self.light_color == "YELLOW":
                 throttle = max(min(throttle, 0.05), -0.05)
                 yaw = max(min(yaw, 0.5), -0.5)
-            elif self.current_light_color == "GREEN":
+            elif self.light_color == "GREEN":
                 throttle = max(min(throttle, 0.1), -0.1)
                 yaw = max(min(yaw, 1.0), -1.0)
-
-            combined_error = abs(yaw)
-            cross_error = abs(normalized_x)
-
-            self.get_logger().info(f"[ADAPTIVE] light={self.current_light_color}, error={combined_error:.3f}, x_error={cross_error:.3f}, throttle={throttle:.3f}, yaw={yaw:.3f}")
+            else:
+                throttle = 0.0
+                yaw = 0.0
 
             if self.debug:
-                self.draw_debug_info(roi, scored_contours, line_contour, best_score, cx, cy)
-        else:
-            if self.debug:
-                cv2.imshow("Línea - DEBUG", roi)
-                cv2.waitKey(1)
+                self.draw_debug_info(roi, scored_contours, line_contour, cx, cy)
 
         return throttle, yaw
 
-    def draw_debug_info(self, roi, scored_contours, best_contour, best_score, cx, cy):
-        for c, score in scored_contours[1:]:
+    def draw_debug_info(self, roi, scored_contours, best_contour, cx, cy):
+        for c, _ in scored_contours[1:]:
             cv2.drawContours(roi, [c], -1, (0, 0, 255), 2)
         cv2.drawContours(roi, [best_contour], -1, (0, 255, 0), 2)
-        score_text = f"Selected: Score={best_score:.2f}"
-        cv2.putText(roi, score_text, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         cv2.line(roi, (int(cx), 0), (int(cx), roi.shape[0]), (255, 0, 0), 2)
-        for c, _ in scored_contours:
-            _, _, angle, cx_c, cy_c = self.get_contour_line(c)
-            center_score = 1.0 - (abs(cx_c - roi.shape[1] / 2) / (roi.shape[1] / 2))
-            angle_score = 1.0 - min(abs(angle), 80) / 80
-            total_score = (self.center_weight * center_score) + (self.angle_weight * angle_score)
-            debug_text = f"C:{center_score:.2f} A:{angle_score:.2f} T:{total_score:.2f}"
-            cv2.putText(roi, debug_text, (int(cx_c), int(cy_c) - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
         cv2.imshow("Línea - DEBUG", roi)
         cv2.waitKey(1)
 
@@ -166,7 +162,7 @@ class SmartFollower(Node):
         vx, vy, cx, cy = cv2.fitLine(c, cv2.DIST_L2, 0, 0.01, 0.01).flatten()
         angle = math.degrees(math.atan2(vy, vx))
         if fix_vert:
-            angle = angle - 90 * np.sign(angle)
+            angle -= 90 * np.sign(angle)
         return None, None, angle, cx, cy
 
     def compute_pid(self, current_value):

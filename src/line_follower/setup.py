@@ -25,7 +25,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'prueba1 = line_follower.prueba1:main',
+            'line_follower = line_follower.line_follower:main',
             'light_detector = line_follower.light_detector:main',
         ],
     },
