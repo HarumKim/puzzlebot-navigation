@@ -28,7 +28,7 @@ class SmartFollower(Node):
             depth=1
         )
 
-        self.image_sub = self.create_subscription(Image, '/video_source/raw', self.image_callback, 10)
+        self.image_sub = self.create_subscription(Image, '/video_source/raw', self.image_callback, qos_profile)
         self.bridge = CvBridge()
 
         # Estado del semáforo
@@ -77,7 +77,7 @@ class SmartFollower(Node):
         throttle, yaw = self.follow_line(frame)
 
         if not self.green_light_received:
-            self.get_logger().info("🛑 Esperando luz VERDE para iniciar...")
+            self.get_logger().info("🚩 Esperando luz VERDE para iniciar...")
             throttle = 0.0
             yaw = 0.0
 
@@ -100,8 +100,7 @@ class SmartFollower(Node):
             return 0.0, 0.0
 
         h, w = frame.shape[:2]
-        roi_height_start = int(h * 0.6)
-        roi = frame[roi_height_start:, 0:]
+        roi = frame  # usar todo el frame para ver las 3 líneas
         frame_center_x = w / 2
 
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -113,45 +112,50 @@ class SmartFollower(Node):
         contours = [c for c in contours if cv2.contourArea(c) > 3000]
 
         throttle, yaw = 0.0, 0.0
-        if contours:
-            def line_score(c):
-                _, _, angle, cx, cy = self.get_contour_line(c)
-                center_score = 1.0 - (abs(cx - frame_center_x) / frame_center_x)
-                angle_score = 1.0 - min(abs(angle), 80) / 80
-                return (self.center_weight * center_score) + (self.angle_weight * angle_score)
+        if len(contours) >= 3:
+            # Ordenar por centro en X
+            def get_cx(c):
+                M = cv2.moments(c)
+                return int(M['m10'] / M['m00']) if M['m00'] != 0 else 0
 
-            scored_contours = [(c, line_score(c)) for c in contours]
-            scored_contours.sort(key=lambda x: x[1], reverse=True)
-
-            line_contour = scored_contours[0][0]
-            _, _, angle, cx, cy = self.get_contour_line(line_contour)
-            normalized_x = (cx - frame_center_x) / frame_center_x
-            yaw = self.compute_pid(normalized_x)
-
-            alignment = 1 - abs(normalized_x)
-            align_thres = 0.15
-            throttle = self.max_throttle * ((alignment - align_thres) / (1 - align_thres)) if alignment >= align_thres else 0
-
-            if self.light_color == "RED":
-                throttle = 0.0
-                yaw = 0.0
-            elif self.light_color == "YELLOW":
-                throttle = max(min(throttle, 0.05), -0.05)
-                yaw = max(min(yaw, 0.5), -0.5)
-            elif self.light_color == "GREEN":
-                throttle = max(min(throttle, 0.1), -0.1)
-                yaw = max(min(yaw, 1.0), -1.0)
-            else:
-                throttle = 0.0
-                yaw = 0.0
-
+            contours.sort(key=get_cx)
+            line_contour = contours[1]  # tomar la línea del centro
+        elif contours:
+            line_contour = max(contours, key=cv2.contourArea)
+        else:
             if self.debug:
-                self.draw_debug_info(roi, scored_contours, line_contour, cx, cy)
+                cv2.imshow("Línea - DEBUG", roi)
+                cv2.waitKey(1)
+            return 0.0, 0.0
+
+        _, _, angle, cx, cy = self.get_contour_line(line_contour)
+        normalized_x = (cx - frame_center_x) / frame_center_x
+        yaw = self.compute_pid(normalized_x)
+
+        alignment = 1 - abs(normalized_x)
+        align_thres = 0.15
+        throttle = self.max_throttle * ((alignment - align_thres) / (1 - align_thres)) if alignment >= align_thres else 0
+
+        if self.light_color == "RED":
+            throttle = 0.0
+            yaw = 0.0
+        elif self.light_color == "YELLOW":
+            throttle = max(min(throttle, 0.05), -0.05)
+            yaw = max(min(yaw, 0.5), -0.5)
+        elif self.light_color == "GREEN":
+            throttle = max(min(throttle, 0.1), -0.1)
+            yaw = max(min(yaw, 1.0), -1.0)
+        else:
+            throttle = 0.0
+            yaw = 0.0
+
+        if self.debug:
+            self.draw_debug_info(roi, contours, line_contour, cx, cy)
 
         return throttle, yaw
 
-    def draw_debug_info(self, roi, scored_contours, best_contour, cx, cy):
-        for c, _ in scored_contours[1:]:
+    def draw_debug_info(self, roi, contours, best_contour, cx, cy):
+        for c in contours:
             cv2.drawContours(roi, [c], -1, (0, 0, 255), 2)
         cv2.drawContours(roi, [best_contour], -1, (0, 255, 0), 2)
         cv2.line(roi, (int(cx), 0), (int(cx), roi.shape[0]), (255, 0, 0), 2)
