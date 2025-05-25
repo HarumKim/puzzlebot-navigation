@@ -1,0 +1,18 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/ximena/ros2_ws/install/signal_proc/lib/python3.10/site-packages",
+        "/home/ximena/ros2_ws/install/motor_control/lib/python3.10/site-packages",
+        "/home/ximena/ros2_ws/install/basic_comms/lib/python3.10/site-packages",
+        "/home/ximena/tutorial_manchester/install/template/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/ximena/ros2_ws/install/signal_proc/lib/python3.10/site-packages",
+        "/home/ximena/ros2_ws/install/motor_control/lib/python3.10/site-packages",
+        "/home/ximena/ros2_ws/install/basic_comms/lib/python3.10/site-packages",
+        "/home/ximena/tutorial_manchester/install/template/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

@@ -1,0 +1,5 @@
+bool enable
+#Response
+---
+bool success
+string message
