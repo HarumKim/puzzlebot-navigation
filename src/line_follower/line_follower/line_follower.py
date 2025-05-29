@@ -52,11 +52,25 @@ class SmartFollower(Node):
         self.center_weight = 0.7
         self.angle_weight = 0.2
 
+        self.last_frame_time = time.time()
+        self.frame_timeout = 1.0
+        self.frame_check_timer = self.create_timer(0.1, self.check_frame_timeout)
+
         self.get_logger().info("🤖 SmartFollower iniciado (PID incluido + detección unificada).")
 
         if self.debug:
             cv2.namedWindow("Línea - DEBUG", cv2.WINDOW_NORMAL)
-
+    def check_frame_timeout(self):
+        if not self.simulation_running:
+            return
+        now = time.time()
+        if (now - self.last_frame_time) > self.frame_timeout:
+            twist = Twist()
+            twist.linear.x = 0.0
+            twist.angular.z = 0.0
+            self.cmd_pub.publish(twist)
+            self.get_logger().warn("⚠️ No frames received recently. Robot stopped for safety.")
+            
     def set_process_callback(self, request, response):
         self.simulation_running = request.enable
         if request.enable:
@@ -69,6 +83,7 @@ class SmartFollower(Node):
         return response
 
     def image_callback(self, msg):
+        self.last_frame_time = time.time()
         if not self.simulation_running:
             return
 
@@ -100,7 +115,8 @@ class SmartFollower(Node):
             return 0.0, 0.0
 
         h, w = frame.shape[:2]
-        roi = frame  # usar todo el frame para ver las 3 líneas
+        roi_height_start = int(h * 0.6)  # usar todo el frame para ver las 3 líneas
+        roi = frame[roi_height_start:, 0:]
         frame_center_x = w / 2
 
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
