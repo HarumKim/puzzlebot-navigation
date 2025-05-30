@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(line_follower)
+project(line_followerxime)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -53,8 +53,8 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python nodes
 install(PROGRAMS
-  line_follower/line_follower.py
-  line_follower/light_detector.py
+  line_followerxime/line_follower.py
+  line_followerxime/light_detector.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

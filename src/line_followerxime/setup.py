@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 import os
 from glob import glob
 
-package_name = 'line_follower'
+package_name = 'line_followerxime'
 
 setup(
     name=package_name,
@@ -25,8 +25,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'line_follower = line_follower.line_follower:main',
-            'light_detector = line_follower.light_detector:main',
+            'line_follower = line_followerxime.line_follower:main',
+            'light_detector = line_followerxime.light_detector:main',
         ],
     },
 )

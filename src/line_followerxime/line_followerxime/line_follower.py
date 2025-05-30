@@ -115,9 +115,16 @@ class SmartFollower(Node):
             return 0.0, 0.0
 
         h, w = frame.shape[:2]
-        roi_height_start = int(h * 0.6)  # usar todo el frame para ver las 3 líneas
-        roi = frame[roi_height_start:, 0:]
-        frame_center_x = w / 2
+        roi_height_start = int(h * 0.5)
+
+        # 🔧 Reducción del campo de visión horizontal: recorte desde el centro
+        roi_width = int(w * 0.6)  # por ejemplo, usar solo el 50% del ancho
+        x_start = int((w - roi_width) / 2)
+        x_end = x_start + roi_width
+
+        roi = frame[roi_height_start:, x_start:x_end]
+        frame_center_x = roi.shape[1] / 2  # centro de la nueva ROI
+
 
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         _, mask = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV)
@@ -146,7 +153,22 @@ class SmartFollower(Node):
 
         _, _, angle, cx, cy = self.get_contour_line(line_contour)
         normalized_x = (cx - frame_center_x) / frame_center_x
+
+        # Corrección de sesgo si la cámara está desalineada
+        bias = 0.0  # ajusta a -0.03 o 0.03 si lo necesitas
+        normalized_x += bias
+
         yaw = self.compute_pid(normalized_x)
+
+        # Banda muerta para evitar temblores
+        if abs(normalized_x) < 0.02:
+            yaw = 0.0
+
+        # Límite desigual si quieres restringir el giro más hacia un lado
+        if normalized_x > 0:
+            yaw = min(yaw, math.radians(25))
+        else:
+            yaw = max(yaw, -math.radians(35))
 
         alignment = 1 - abs(normalized_x)
         align_thres = 0.15

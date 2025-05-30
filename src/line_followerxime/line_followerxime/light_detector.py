@@ -7,6 +7,8 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import numpy as np
 import threading
+from custom_interfaces.srv import SetProcessBool
+
 
 class LightDetector(Node):
     def __init__(self):
@@ -40,10 +42,43 @@ class LightDetector(Node):
         self.detector = self.configure_blob_detector()
 
         # Lanzar thread de procesamiento
-        self.processing_thread = threading.Thread(target=self.processing_loop, daemon=True)
-        self.processing_thread.start()
+        self.timer = self.create_timer(0.1, self.start_processing)
 
         self.get_logger().info("🚦 Nodo 'light_detector' iniciado (con thread).")
+
+        self.system_running = False
+        self.cli = self.create_client(SetProcessBool, 'EnableProcess')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Esperando el servicio EnableProcess...')
+
+        self.send_request(True)
+        
+    def start_processing(self):
+        self.processing_thread = threading.Thread(target=self.processing_loop, daemon=True)
+        self.processing_thread.start()
+        self.get_logger().info("🚦 Procesamiento iniciado.")
+        self.timer.cancel()
+
+    def send_request(self, enable):
+        request = SetProcessBool.Request()
+        request.enable = enable
+
+        future = self.cli.call_async(request)
+        future.add_done_callback(self.callback_response)
+
+    def callback_response(self, future):
+        try:
+            response = future.result()
+            if response.success:
+                self.system_running = True
+                self.get_logger().info("✅ Proceso habilitado.")
+            else:
+                self.simulation_running = False
+                self.get_logger().error("❌ Error al habilitar el proceso.")
+                self.get_logger().warn(f'Failure: {response.message}')
+        except Exception as e:
+            self.simulation_running = False
+            self.get_logger().error(f"❌ Error al llamar al servicio: {e}")
 
     def configure_blob_detector(self):
         params = cv.SimpleBlobDetector_Params()
