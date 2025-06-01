@@ -16,6 +16,16 @@ def generate_launch_description():
                 'python3',
                 os.path.join(
                     os.getenv('HOME'),
+                    'ros2_ws', 'src', 'line_followerxime', 'line_followerxime', 'testmodel.py'
+                )
+            ],
+            output='screen'
+        ),        
+        ExecuteProcess(
+            cmd=[
+                'python3',
+                os.path.join(
+                    os.getenv('HOME'),
                     'ros2_ws', 'src', 'line_followerxime', 'line_followerxime', 'light_detector.py'
                 )
             ],
