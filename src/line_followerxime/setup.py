@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'line_follower = line_followerxime.line_follower:main',
             'light_detector = line_followerxime.light_detector:main',
+            'test_model = line_followerxime.testmodel:main', 
         ],
     },
 )
