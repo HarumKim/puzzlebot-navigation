@@ -55,6 +55,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   line_followerxime/line_follower.py
   line_followerxime/light_detector.py
+  line_followerxime/testmodel.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
