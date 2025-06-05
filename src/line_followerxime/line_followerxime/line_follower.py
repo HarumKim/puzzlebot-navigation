@@ -42,6 +42,10 @@ class SmartFollower(Node):
         self.green_light_received = False
         self.prev_light_color = "UNKNOWN"
         self.light_color = "UNKNOWN"
+        self.waiting_for_green = True
+        self.green_released_once = False
+        self.waiting_printed = False  # Para evitar spam de consola
+        self.last_light_msg = None    # Para detectar repeticiones idénticas
 
         # Conexión con el modelo YOLO de detección de señales de tránsito
         self.yolo_signal = "N/A"
@@ -150,21 +154,6 @@ class SmartFollower(Node):
             cv2.imshow("Bird's Eye View", bird_view)
             cv2.waitKey(1)
     
-    '''def light_callback(self, msg):
-        if msg.data in ["RED", "YELLOW", "GREEN"]:
-            # Si el color cambió, resetea la lógica de señales
-            if msg.data != self.light_color:
-                self.get_logger().info(f"🔁 Cambio de semáforo: {self.light_color} ➜ {msg.data}")
-                self.override_active = False
-                self.override_behavior = None
-                self.override_timer = None
-
-            self.prev_light_color = self.light_color
-            self.light_color = msg.data
-
-            if self.light_color == "GREEN":
-                self.green_light_received = True'''
-    
     def bird_eye_view(self, frame):
         h, w = frame.shape[:2]
         src_pts = np.float32([
@@ -186,7 +175,7 @@ class SmartFollower(Node):
     def light_callback(self, msg):
         if msg.data in ["RED", "YELLOW", "GREEN"]:
             # Reiniciar siempre al recibir nueva lectura del semáforo (aunque no cambie)
-            #self.get_logger().info(f"🟢 Nueva lectura de semáforo: {msg.data} (antes: {self.light_color})")
+            self.get_logger().info(f"🟢 Nueva lectura de semáforo: {msg.data} (antes: {self.light_color})")
             
             # Resetear estado de señales siempre
             if self.override_active:
@@ -255,6 +244,7 @@ class SmartFollower(Node):
             if self.debug:
                 cv2.imshow("Línea - DEBUG", roi)
                 cv2.waitKey(1)
+
             return 0.0, 0.0
 
         # Obtener centroides de los contornos detectados
@@ -301,13 +291,13 @@ class SmartFollower(Node):
 
         # 🛑 SEMÁFORO — Prioridad absoluta
         if self.light_color == "RED":
-            self.get_logger().info("🔴 Semáforo en ROJO: Deteniendo.")
+            #self.get_logger().info("🔴 Semáforo en ROJO: Deteniendo.")
             return 0.0, 0.0
 
         # 🟡 AMARILLO: permitir señales, pero velocidad limitada
         if self.light_color == "YELLOW":
-            self.get_logger().info("🟡  Semáforo en AMARILLO: Desacelerando.")
-            throttle = min(throttle, 0.05)
+            #self.get_logger().info("🟡  Semáforo en AMARILLO: Desacelerando.")
+            throttle = min(throttle, 0.02)
 
         # 🟢 VERDE: permitir comportamiento normal (ya se aplicó arriba)
 
