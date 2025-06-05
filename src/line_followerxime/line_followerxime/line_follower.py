@@ -57,17 +57,17 @@ class SmartFollower(Node):
         # PID separados para control lineal y angular
         # PID Angular (para seguimiento de línea)
         self.Kp_ang = 0.8
-        self.Ki_ang = 0.15
-        self.Kd_ang = 0.1
+        self.Ki_ang = 0.0
+        self.Kd_ang = 0.0
         self.setpoint_ang = 0.0
         self.last_error_ang = 0.0
         self.integral_ang = 0.0
         self.prev_time_ang = time.time()
 
         # PID Lineal (para control de velocidad basado en alineación)
-        self.Kp_lin = 1.0
-        self.Ki_lin = 0.1
-        self.Kd_lin = 0.05
+        self.Kp_lin = 0.8
+        self.Ki_lin = 0.13
+        self.Kd_lin = 0.0
         self.setpoint_lin = 1.0  # Velocidad objetivo cuando está bien alineado
         self.last_error_lin = 0.0
         self.integral_lin = 0.0
@@ -82,7 +82,7 @@ class SmartFollower(Node):
         self.error_change_threshold = 0.5  # Si el error cambia más de esto, resetear PID
 
         if self.debug:
-            cv2.namedWindow("Línea - DEBUG", cv2.WINDOW_NORMAL)
+            #cv2.namedWindow("Línea - DEBUG", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Bird's Eye View", cv2.WINDOW_NORMAL)
 
         self.get_logger().info("🤖 SmartFollower iniciado con PIDs separados.")
@@ -149,10 +149,6 @@ class SmartFollower(Node):
         twist.linear.x = float(throttle)
         twist.angular.z = float(yaw)
         self.cmd_pub.publish(twist)
-
-        if self.debug:
-            cv2.imshow("Bird's Eye View", bird_view)
-            cv2.waitKey(1)
     
     def bird_eye_view(self, frame):
         h, w = frame.shape[:2]
@@ -242,7 +238,7 @@ class SmartFollower(Node):
 
         if not contours:
             if self.debug:
-                cv2.imshow("Línea - DEBUG", roi)
+                cv2.imshow("Bird's Eye View", roi)
                 cv2.waitKey(1)
 
             return 0.0, 0.0
@@ -346,7 +342,7 @@ class SmartFollower(Node):
         for c in contours:
             cv2.drawContours(roi, [c], -1, (0, 0, 255), 2)
         cv2.line(roi, (int(avg_cx), 0), (int(avg_cx), roi.shape[0]), (255, 0, 0), 2)
-        cv2.imshow("Línea - DEBUG", roi)
+        cv2.imshow("Bird's Eye View", roi)
         cv2.waitKey(1)
 
     def compute_angular_pid(self, current_error):

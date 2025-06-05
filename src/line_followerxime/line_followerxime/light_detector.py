@@ -25,6 +25,8 @@ class LightDetector(Node):
         self.last_detected = "UNKNOWN"
 
         # HSV color ranges
+        '''
+        # VALORES ANTES DE SÉMAFORO DE CERÓN
         self.red1_lower = np.array([0, 120, 70])
         self.red1_upper = np.array([10, 255, 255])
         self.red2_lower = np.array([170, 120, 70])
@@ -36,7 +38,31 @@ class LightDetector(Node):
         self.yellow2_upper = np.array([45, 130, 255])
 
         self.green_lower = np.array([36, 100, 50])
-        self.green_upper = np.array([85, 255, 255])
+        self.green_upper = np.array([85, 255, 255])'''
+
+        '''
+        # VALORES DE IVÁN
+        self.red1_lower = np.array([0, 100, 100])
+        self.red1_upper = np.array([10, 255, 255])
+        self.red2_lower = np.array([160, 100, 100])
+        self.red2_upper = np.array([179, 255, 255])
+
+        self.yellow_lower = np.array([18, 80, 80])
+        self.yellow_upper = np.array([35, 255, 255])
+
+        self.green_lower = np.array([40, 70, 70])
+        self.green_upper = np.array([85, 255, 255])'''
+
+        #HSV color ranges después de calibrar con semáforo de cerón
+        self.red_lower = np.array([159, 101, 164])
+        self.red_upper = np.array([179, 255, 255])
+
+        self.yellow_lower = np.array([0, 20, 181])
+        self.yellow_upper = np.array([25, 255, 255])
+
+        self.green_lower = np.array([39, 17, 171])
+        self.green_upper = np.array([87, 131, 255])
+
 
         self.kernel = np.ones((5, 5), np.uint8)
         self.detector = self.configure_blob_detector()
@@ -143,11 +169,9 @@ class LightDetector(Node):
                 frame = self.img.copy()
             hsv_img = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
             detected = "UNKNOWN"
-            if self.detect_blob(hsv_img, self.red1_lower, self.red1_upper) or \
-               self.detect_blob(hsv_img, self.red2_lower, self.red2_upper):
+            if self.detect_blob(hsv_img, self.red_lower, self.red_upper):#self.detect_blob(hsv_img, self.red1_lower, self.red1_upper) or \self.detect_blob(hsv_img, self.red2_lower, self.red2_upper):
                 detected = "RED"
-            elif self.detect_blob(hsv_img, self.yellow1_lower, self.yellow1_upper) or \
-                 self.detect_blob(hsv_img, self.yellow2_lower, self.yellow2_upper):
+            elif self.detect_blob(hsv_img, self.yellow_lower, self.yellow_upper):#elif self.detect_blob(hsv_img, self.yellow1_lower, self.yellow1_upper) or \self.detect_blob(hsv_img, self.yellow2_lower, self.yellow2_upper):
                 detected = "YELLOW"
             elif self.detect_blob(hsv_img, self.green_lower, self.green_upper):
                 detected = "GREEN"
