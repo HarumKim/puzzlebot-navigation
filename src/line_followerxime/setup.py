@@ -28,6 +28,8 @@ setup(
             'line_follower = line_followerxime.line_follower:main',
             'light_detector = line_followerxime.light_detector:main',
             'test_model = line_followerxime.testmodel:main', 
+            'hsv_calibra = line_followerxime.hsv_calibra:main',
+            'image_capturer = line_followerxime.image_capturer:main',
         ],
     },
 )
