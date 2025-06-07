@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 import os
 from glob import glob
 
-package_name = 'line_followerxime'
+package_name = 'final_te3002b'
 
 setup(
     name=package_name,
@@ -25,11 +25,11 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'line_follower = line_followerxime.line_follower:main',
-            'light_detector = line_followerxime.light_detector:main',
-            'test_model = line_followerxime.testmodel:main', 
-            'hsv_calibra = line_followerxime.hsv_calibra:main',
-            'image_capturer = line_followerxime.image_capturer:main',
+            'line_follower = final_te3002b.line_follower:main',
+            'traffic_light = final_te3002b.traffic_light:main',
+            'traffic_signs = final_te3002b.traffic_signs:main',
+            'state_machine = final_te3002b.state_machine:main',
         ],
     },
 )
+rm

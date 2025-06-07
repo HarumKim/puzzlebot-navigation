@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(line_followerxime)
+project(final_te3002b)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -53,11 +53,10 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python nodes
 install(PROGRAMS
-  line_followerxime/line_follower.py
-  line_followerxime/light_detector.py
-  line_followerxime/testmodel.py
-  line_followerxime/hsv_calibra.py
-  line_followerxime/image_capturer.py
+  final_te3002b/line_follower.py
+  final_te3002b/traffic_light.py
+  final_te3002b/traffic_signs.py
+  final_te3002b/state_machine.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

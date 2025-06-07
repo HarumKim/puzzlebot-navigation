@@ -26,20 +26,21 @@ class YOLOTester(Node):
         # Publicador de señal detectada
         self.sign_pub = self.create_publisher(String, '/detected_sign', 10)
 
-        self.get_logger().info("🧠 Cargando modelo YOLO...")
-        self.model = YOLO("/home/navelaz/runs/detect/train/weights/signDetection.pt")
-        self.get_logger().info("✅ Modelo YOLO cargado correctamente.")
+        self.get_logger().info("🧠 Cargando modelo YOLO de señales...")
+        self.model = YOLO("/home/navelaz/runs_signs/detect/train/weights/signDetection.pt")
+        self.get_logger().info("✅ Modelo YOLO de señales cargado correctamente.")
 
-        cv2.namedWindow("YOLO Detecciones", cv2.WINDOW_NORMAL)
+        cv2.namedWindow("YOLO Signals", cv2.WINDOW_NORMAL)
 
     def image_callback(self, msg):
         try:
             frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
             # Inferencia YOLO
-            results = self.model(frame)[0]
+            results = self.model(frame, verbose=False)[0]
+
             img_with_boxes = results.plot()
-            cv2.imshow("YOLO Detecciones", img_with_boxes)
+            cv2.imshow("YOLO Signals", img_with_boxes)
             cv2.waitKey(1)
 
             # Procesar detecciones
