@@ -11,6 +11,17 @@ def generate_launch_description():
             name='camera_subscriber_node',
             output='screen'
         ),
+         ExecuteProcess(
+            cmd=[
+                'python3',
+                os.path.join(
+                    os.getenv('HOME'),
+                    'ros2_ws', 'src', 'final_te3002b', 'final_te3002b', 'line_follower.py'
+                )
+            ],
+            output='screen'
+        ),
+
         ExecuteProcess(
             cmd=[
                 'python3',
@@ -31,17 +42,6 @@ def generate_launch_description():
             ],
             output='screen'
         ),
-        ExecuteProcess(
-            cmd=[
-                'python3',
-                os.path.join(
-                    os.getenv('HOME'),
-                    'ros2_ws', 'src', 'final_te3002b', 'final_te3002b', 'line_follower.py'
-                )
-            ],
-            output='screen'
-        ),
-
         ExecuteProcess(
             cmd=[
                 'python3',

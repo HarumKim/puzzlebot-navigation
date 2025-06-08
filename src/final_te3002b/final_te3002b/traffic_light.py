@@ -30,6 +30,8 @@ class YOLOTester(Node):
         # Publicador de señal detectada
         self.sign_pub = self.create_publisher(String, '/detected_color', 10)
 
+        self.last_detected_color = None  # Guarda el último color detectado
+
         # Inicializar modelo YOLO
         self.get_logger().info("🧠 Cargando modelo YOLO de semaforo...")
         self.model = YOLO("/home/navelaz/runs/detect/train/weights/best.pt")
@@ -93,7 +95,10 @@ class YOLOTester(Node):
                     msg = String()
                     msg.data = detected_class
                     self.sign_pub.publish(msg)
-                    self.get_logger().info(f"🚧 Color detectado: {detected_class}")
+
+                    if detected_class != self.last_detected_color:
+                        #self.get_logger().info(f"🚦 Nuevo color detectado: {detected_class}")
+                        self.last_detected_color = detected_class
 
         except Exception as e:
             self.get_logger().error(f"❌ Error en la inferencia YOLO: {e}")

@@ -26,6 +26,9 @@ class YOLOTester(Node):
         # Publicador de señal detectada
         self.sign_pub = self.create_publisher(String, '/detected_sign', 10)
 
+        self.last_detected_sign = None  # Para evitar logs repetitivos
+
+
         self.get_logger().info("🧠 Cargando modelo YOLO de señales...")
         self.model = YOLO("/home/navelaz/runs_signs/detect/train/weights/signDetection.pt")
         self.get_logger().info("✅ Modelo YOLO de señales cargado correctamente.")
@@ -60,7 +63,11 @@ class YOLOTester(Node):
                     msg = String()
                     msg.data = detected_class
                     self.sign_pub.publish(msg)
-                    self.get_logger().info(f"🚧 Señal detectada: {detected_class}")
+
+                    if detected_class != self.last_detected_sign:
+                        #self.get_logger().info(f"🚧 Nueva señal detectada: {detected_class}")
+                        self.last_detected_sign = detected_class
+
 
         except Exception as e:
             self.get_logger().error(f"❌ Error en la inferencia YOLO: {e}")
