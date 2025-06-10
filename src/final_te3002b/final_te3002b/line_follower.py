@@ -21,15 +21,15 @@ class LineFollower(Node):
 
         # Velocidades lineales máximas diferenciadas
         self.linear_speed_straight = 0.08
-        self.linear_speed_curve = 0.06
+        self.linear_speed_curve = 0.06  
 
         # PID Angular - curva
-        self.Kp_ang_curve = 1.2
+        self.Kp_ang_curve = 0.8
         self.Ki_ang_curve = 0.0
-        self.Kd_ang_curve = 0.1
+        self.Kd_ang_curve = 0.0
 
         # PID Angular - recta
-        self.Kp_ang_straight = 5.0
+        self.Kp_ang_straight = 0.8
         self.Ki_ang_straight = 0.13
         self.Kd_ang_straight = 0.0
 
@@ -37,6 +37,10 @@ class LineFollower(Node):
         self.last_error_ang = 0.0
         self.integral_ang = 0.0
         self.prev_time_ang = time.time()
+
+        self.speed_factor = 1.0
+        self.create_subscription(Float32, '/velocity_factor', self.speed_factor_callback, 10)
+
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.error_pub = self.create_publisher(Float32, '/normalized_error', 10)
@@ -65,6 +69,11 @@ class LineFollower(Node):
 
         self.get_logger().info("🟢 Line follower (compressed) started")
 
+    
+    def speed_factor_callback(self, msg):
+        self.speed_factor = msg.data
+
+    
     def set_process_callback(self, request, response):
         self.simulation_running = request.enable
         response.success = True
@@ -86,7 +95,7 @@ class LineFollower(Node):
 
             if self.simulation_running and (throttle != 0.0 or yaw != 0.0):
                 twist = Twist()
-                twist.linear.x = float(throttle)
+                twist.linear.x = float(throttle * self.speed_factor)
                 twist.angular.z = float(yaw)
                 self.cmd_pub.publish(twist)
 
@@ -126,7 +135,7 @@ class LineFollower(Node):
         mask = cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=2)
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours = [c for c in contours if cv2.contourArea(c) > 4350]
+        contours = [c for c in contours if cv2.contourArea(c) > 4250]
 
         if not contours:
             self.line_status_pub.publish(String(data="not_detected"))
