@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 from std_msgs.msg import String
 from cv_bridge import CvBridge
 import cv2
+import numpy as np
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
+from custom_interfaces.srv import SetProcessBool
 
 from ultralytics import YOLO
 
@@ -20,35 +22,40 @@ class YOLOTester(Node):
             depth=1
         )
 
-        self.image_sub = self.create_subscription(Image, '/image_raw', self.image_callback, qos_profile)
+        self.compressed_sub = self.create_subscription(CompressedImage, '/video_source/raw/compressed', self.compressed_callback, 10)
         self.bridge = CvBridge()
 
-        # Publicador de señal detectada
+        
+
+        # Publicadores
         self.sign_pub = self.create_publisher(String, '/detected_sign', 10)
+        self.debug_pub = self.create_publisher(Image, '/yolo_signals_view', 10)
 
         self.last_detected_sign = None  # Para evitar logs repetitivos
-
 
         self.get_logger().info("🧠 Cargando modelo YOLO de señales...")
         self.model = YOLO("/home/navelaz/runs_signs/detect/train/weights/signDetection.pt")
         self.get_logger().info("✅ Modelo YOLO de señales cargado correctamente.")
 
-        cv2.namedWindow("YOLO Signals", cv2.WINDOW_NORMAL)
-
-    def image_callback(self, msg):
+    def compressed_callback(self, msg):
         try:
-            frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            np_arr = np.frombuffer(msg.data, np.uint8)
+            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            self.process_frame(frame)
+        except Exception as e:
+            self.get_logger().error(f"❌ Error en compressed_callback: {e}")
 
-            # Inferencia YOLO
+    def process_frame(self, frame):
+        try:
             results = self.model(frame, verbose=False)[0]
 
             img_with_boxes = results.plot()
-            cv2.imshow("YOLO Signals", img_with_boxes)
-            cv2.waitKey(1)
+            debug_img_msg = self.bridge.cv2_to_imgmsg(img_with_boxes, encoding="bgr8")
+            debug_img_msg.header.stamp = self.get_clock().now().to_msg()
+            debug_img_msg.header.frame_id = "yolo_signals_view"
+            self.debug_pub.publish(debug_img_msg)
 
-            # Procesar detecciones
             if results.boxes and results.names:
-                # Tomar el nombre de la detección con mayor confianza
                 max_conf = 0
                 detected_class = None
                 for box in results.boxes:
@@ -65,12 +72,10 @@ class YOLOTester(Node):
                     self.sign_pub.publish(msg)
 
                     if detected_class != self.last_detected_sign:
-                        #self.get_logger().info(f"🚧 Nueva señal detectada: {detected_class}")
                         self.last_detected_sign = detected_class
 
-
         except Exception as e:
-            self.get_logger().error(f"❌ Error en la inferencia YOLO: {e}")
+            self.get_logger().error(f"❌ Error en process_frame: {e}")
 
 def main(args=None):
     rclpy.init(args=args)

@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 from std_msgs.msg import String
 from cv_bridge import CvBridge
 import cv2
+import numpy as np
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 
 from ultralytics import YOLO
-from custom_interfaces.srv import SetProcessBool
+from custom_interfaces.srv import SetProcessBool  # ✅ Importa el servicio
 
 class YOLOTester(Node):
     def __init__(self):
         super().__init__('yolo_tester')
 
-        # Estado de sistema
+        # Estado del sistema
         self.system_running = False
 
         # QoS para imagen
@@ -24,22 +25,23 @@ class YOLOTester(Node):
             depth=1
         )
 
-        self.image_sub = self.create_subscription(Image, '/image_raw', self.image_callback, qos_profile)
+        self.compressed_sub = self.create_subscription(
+            CompressedImage, '/video_source/raw/compressed', self.compressed_callback, 10
+        )
+
         self.bridge = CvBridge()
 
-        # Publicador de señal detectada
+        # Publicadores
         self.sign_pub = self.create_publisher(String, '/detected_color', 10)
+        self.debug_pub = self.create_publisher(Image, '/yolo_colors_view', 10)
 
-        self.last_detected_color = None  # Guarda el último color detectado
+        self.last_detected_sign = None  # Para evitar logs repetitivos
 
-        # Inicializar modelo YOLO
         self.get_logger().info("🧠 Cargando modelo YOLO de semaforo...")
         self.model = YOLO("/home/navelaz/runs/detect/train/weights/best.pt")
         self.get_logger().info("✅ Modelo YOLO de semaforo cargado correctamente.")
 
-        cv2.namedWindow("YOLO Colors", cv2.WINDOW_NORMAL)
-
-        # Cliente de servicio
+        # ✅ Cliente del servicio
         self.cli = self.create_client(SetProcessBool, 'EnableProcess')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('⏳ Esperando el servicio EnableProcess...')
@@ -66,20 +68,27 @@ class YOLOTester(Node):
             self.system_running = False
             self.get_logger().error(f"❌ Excepción al llamar al servicio: {e}")
 
-    def image_callback(self, msg):
+    def compressed_callback(self, msg):
         if not self.system_running:
-            return  # No hacer nada si el sistema no está habilitado
+            return  # ❌ No hace nada si el sistema aún no está activo
 
         try:
-            frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            np_arr = np.frombuffer(msg.data, np.uint8)
+            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            self.process_frame(frame)
+        except Exception as e:
+            self.get_logger().error(f"❌ Error en compressed_callback: {e}")
 
-            # Inferencia YOLO
+    def process_frame(self, frame):
+        try:
             results = self.model(frame, verbose=False)[0]
-            img_with_boxes = results.plot()
-            cv2.imshow("YOLO Colors", img_with_boxes)
-            cv2.waitKey(1)
 
-            # Procesar detecciones
+            img_with_boxes = results.plot()
+            debug_img_msg = self.bridge.cv2_to_imgmsg(img_with_boxes, encoding="bgr8")
+            debug_img_msg.header.stamp = self.get_clock().now().to_msg()
+            debug_img_msg.header.frame_id = "yolo_colors_view"
+            self.debug_pub.publish(debug_img_msg)
+
             if results.boxes and results.names:
                 max_conf = 0
                 detected_class = None
@@ -96,12 +105,11 @@ class YOLOTester(Node):
                     msg.data = detected_class
                     self.sign_pub.publish(msg)
 
-                    if detected_class != self.last_detected_color:
-                        #self.get_logger().info(f"🚦 Nuevo color detectado: {detected_class}")
-                        self.last_detected_color = detected_class
+                    if detected_class != self.last_detected_sign:
+                        self.last_detected_sign = detected_class
 
         except Exception as e:
-            self.get_logger().error(f"❌ Error en la inferencia YOLO: {e}")
+            self.get_logger().error(f"❌ Error en process_frame: {e}")
 
 def main(args=None):
     rclpy.init(args=args)

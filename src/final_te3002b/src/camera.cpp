@@ -29,8 +29,6 @@ private:
     {
         try {
             cv::Mat img = cv_bridge::toCvShare(msg, "bgr8")->image;
-            cv::imshow("Vista de la cámara", img);
-            cv::waitKey(1);
 
             pub_.publish(msg);
         } catch (cv_bridge::Exception &e) {
