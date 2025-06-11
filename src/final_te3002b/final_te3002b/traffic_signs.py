@@ -69,9 +69,10 @@ class YOLOTester(Node):
                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                     cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-                    if conf > best_conf:
+                    if valid and conf > best_conf:
                         best_conf = conf
                         detected_class = class_name
+
 
             # Publica imagen visual con solo las cajas válidas
             debug_img_msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")

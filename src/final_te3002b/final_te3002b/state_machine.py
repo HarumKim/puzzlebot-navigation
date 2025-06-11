@@ -18,6 +18,7 @@ class StateMachine(Node):
         self.create_subscription(String, '/detected_sign', self.sign_callback, 10)
         self.create_subscription(String, '/detected_color', self.traffic_callback, 10)
 
+        self.buzzer_pub = self.create_publisher(String, '/play_tone', 10)
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.last_twist = Twist()
 
@@ -29,7 +30,8 @@ class StateMachine(Node):
         self.dotline_detected = False
         self.selected_intersection_sign = "none"
         self.last_valid_sign = "none"
-
+        
+        self.stop_seen_once = False  # Para doble verificación
         self.first_light_detected = False
         self.waiting_for_new_color = False
         self.initial_light_color = "none"
@@ -74,16 +76,22 @@ class StateMachine(Node):
         if self.current_sign == "roadwork":
             if not self.roadwork_active:
                 self.get_logger().info("🚧 Iniciando zona roadwork → reduciendo velocidad")
-                self.update_speed_factor(0.6)
+                self.update_speed_factor(0.4)
                 self.roadwork_active = True
+                self.buzzer_pub.publish(String(data="roadwork"))
             self.last_roadwork_time = self.get_clock().now().seconds_nanoseconds()[0]
 
         elif self.current_sign == "stop":
-            if not self.stop_waiting:
-                self.get_logger().info("🛑 Señal 'stop' detectada → iniciando espera de 8 segundos")
-                self.stop_waiting = True
-                self.stop_wait_start = self.get_clock().now().seconds_nanoseconds()[0]
-
+            if self.stop_seen_once:
+                if not self.stop_waiting:
+                    self.get_logger().info("🛑 Confirmación de 'stop' → iniciando espera de 6 segundos")
+                    self.buzzer_pub.publish(String(data="stop"))
+                    self.stop_waiting = True
+                    self.stop_wait_start = self.get_clock().now().seconds_nanoseconds()[0]
+                    self.stop_seen_once = False  # Reset para futuras paradas
+            else:
+                self.get_logger().info("⚠️ Primera detección de 'stop' → esperando confirmación")
+                self.stop_seen_once = True
 
         # Activar giveWay
         elif self.current_sign == "giveWay":
@@ -91,6 +99,7 @@ class StateMachine(Node):
                 self.get_logger().info("⚠️ Señal 'giveWay' detectada → reduciendo velocidad")
                 self.update_speed_factor(0.4)  # Reducir más que roadwork
                 self.giveway_active = True
+                self.buzzer_pub.publish(String(data="giveWay"))
 
         # Salir de zona roadwork
         elif self.roadwork_active and self.current_sign != "roadwork":
@@ -108,7 +117,9 @@ class StateMachine(Node):
                 self.publish_stop()
         elif self.current_sign not in ["none", "dotLine", "red", "green", "yellow"]:
             self.last_valid_sign = self.current_sign
-            if self.current_state == self.INTERSECTION:
+            if self.current_sign != "stop":
+                self.stop_seen_once = False  # ← reset si otra señal interrumpe
+            elif self.current_state == self.INTERSECTION:
                 self.selected_intersection_sign = self.current_sign
 
     def traffic_callback(self, msg):
@@ -193,23 +204,19 @@ class StateMachine(Node):
             self.apply_signal_behavior(self.selected_intersection_sign, slow=slow)
             self.continuous_forward = True
 
-    def apply_signal_behavior(self, sign, slow=False):
+    def apply_signal_behavior(self, sign, slow=False): # 🔊 Publica melodía por nombre
         if sign == "aheadOnly":
             self.get_logger().info(f"⬆️ Señal 'aheadOnly' → avanzar {'lento' if slow else 'rápido'}")
             self.publish_forward(slow=slow)
+            self.buzzer_pub.publish(String(data=sign)) 
         elif sign == "turnRight":
             self.get_logger().info(f"➡️ Señal 'turnRight' → girar a la derecha {'lento' if slow else 'rápido'}")
             self.publish_turn(left=False, slow=slow)
+            self.buzzer_pub.publish(String(data=sign)) 
         elif sign == "turnLeft":
             self.get_logger().info(f"⬅️ Señal 'turnLeft' → girar a la izquierda {'lento' if slow else 'rápido'}")
             self.publish_turn(left=True, slow=slow)
-        elif sign == "stop":
-            self.get_logger().info("🛑 Señal 'stop' → detenerse")
-            self.publish_stop()
-        #elif sign == "giveWay":
-            #self.get_logger().info("⚠️ Señal 'giveWay' → ceder paso 2s")
-            #self.publish_stop()
-            #time.sleep(2)
+            self.buzzer_pub.publish(String(data=sign)) 
         else:
             self.get_logger().info(f"🔶 Señal desconocida o ignorada: {sign}")
 
@@ -228,19 +235,19 @@ class StateMachine(Node):
         twist.angular.z = 0.0
         self.cmd_pub.publish(twist)
         self.get_logger().info("⏩ Avanzando recto antes de girar")
-        time.sleep(4.4 if slow else 3.3)
+        time.sleep(3.8 if slow else 3.3)
 
         twist.linear.x = 0.02
         twist.angular.z = 0.5 if left else -0.5
         self.cmd_pub.publish(twist)
         self.get_logger().info("↪️ Girando a la " + ("izquierda" if left else "derecha"))
-        time.sleep(2.5 if slow else 2.5)
+        time.sleep(3.0 if slow else 2.5)
 
         twist.linear.x = 0.06 if slow else 0.08
         twist.angular.z = 0.0
         self.cmd_pub.publish(twist)
         self.get_logger().info("⏩ Avanzando tras el giro")
-        time.sleep(4.0 if slow else 3.0)
+        time.sleep(3.8 if slow else 3.0)
 
         self.turning_in_progress = False  # ← Finaliza flag
         self.get_logger().info("✅ Giro completado")
