@@ -29,6 +29,7 @@ setup(
             'traffic_light = final_te3002b.traffic_light:main',
             'traffic_signs = final_te3002b.traffic_signs:main',
             'state_machine = final_te3002b.state_machine:main',
+            'odometry = final_te3002b.odometry:main',
         ],
     },
 )

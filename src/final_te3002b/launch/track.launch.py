@@ -51,5 +51,15 @@ def generate_launch_description():
                 )
             ],
             output='screen'
+        ),
+        ExecuteProcess(
+            cmd=[
+                'python3',
+                os.path.join(
+                    os.getenv('HOME'),
+                    'ros2_ws', 'src', 'final_te3002b', 'final_te3002b', 'odometry.py'
+                )
+            ],
+            output='screen'
         )
     ])
