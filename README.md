@@ -22,22 +22,22 @@ The final implementation is contained in the `final_te3002b` package. Other fold
 
 Main nodes in the system:
 
-- `**camera**` 
+- `camera` 
   Captures raw images and publishes a compressed video stream to reduce latency.
 
-- `**line_follower.py**`
+- `line_follower.py`
   Implements visual line following using PID control and publishes velocity commands.
 
-- `**traffic_signs.py**`  
+- `traffic_signs.py**`  
   Detects road signs using a trained YOLO model and publishes the detected sign.
 
-- `**traffic_light.py**`  
+- `traffic_light.py`  
   Detects traffic light color and publishes the result when the robot reaches an intersection.
 
-- `**state_machine.py**`  
+- `state_machine.py`  
   Acts as the master node. It integrates all perception inputs and decides the robot’s behavior.
 
-- `**odometry.py**`  
+- `odometry.py`  
   Computes robot motion estimates for navigation and future extensions.
 
 All nodes communicate through ROS 2 topics, allowing clear separation of responsibilities and easier debugging.
