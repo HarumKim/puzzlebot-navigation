@@ -4,7 +4,12 @@ This project implements an **autonomous navigation system** for a differential-d
 
 ---
 
-<img width="472" height="610" alt="image" src="https://github.com/user-attachments/assets/8972153d-fb24-4bdf-b255-90053ac37266" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/8972153d-fb24-4bdf-b255-90053ac37266"
+       alt="Puzzlebot Track"
+       height="350">
+</p>
+
 
 ## 🎯 Project Overview
 
