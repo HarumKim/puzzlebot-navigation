@@ -22,13 +22,13 @@ The final implementation is contained in the `final_te3002b` package. Other fold
 
 Main nodes in the system:
 
-- `camera` 
+- `camera`  
   Captures raw images and publishes a compressed video stream to reduce latency.
 
-- `line_follower.py`
+- `line_follower.py`  
   Implements visual line following using PID control and publishes velocity commands.
 
-- `traffic_signs.py**`  
+- `traffic_signs.py`    
   Detects road signs using a trained YOLO model and publishes the detected sign.
 
 - `traffic_light.py`  
