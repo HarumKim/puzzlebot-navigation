@@ -106,7 +106,7 @@ To visualize the robot’s camera stream, open a second terminal (on the Jetson 
 ros2 run rqt_image_view rqt_image_view
 ```
 
---
+---
 ## 🎥 Demonstration
 
 ### 🎥 Full Autonomous Navigation Demo  
