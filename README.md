@@ -65,24 +65,46 @@ All nodes communicate through ROS 2 topics, allowing clear separation of respons
 
 ## 🚀 How to Run the Project
 
-### 1. Build the Workspace
+### 1. Connect to the Jetson Nano
 
-From your ROS 2 workspace root:
+The Puzzlebot runs all ROS 2 nodes onboard the **Jetson Nano**.
+
+1. Power on the Puzzlebot.
+2. Connect your PC to the same network as the Jetson (WiFi or Ethernet).
+3. SSH into the Jetson
+
+### 2. Source the ROS 2 Environment
+
+Once connected to the Jetson, source ROS 2 and the workspace:
+
+```bash
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+```
+
+### 3. Build the Workspace
+
+From the ROS 2 workspace root:
 
 ```bash
 colcon build
 source install/setup.bash
 ```
 
-### 2. Launch the System
+### 4. Launch the System
 
-The entire pipeline is launched using a single launch file:
+Start the full autonomous navigation pipeline:
 
 ```bash
 ros2 launch final_te3002b track.launch.py
 ```
 
-This launch file automatically starts the main nodes of the system. Once launched, the robot will begin autonomous navigation on the track.
+### 5. Visualize the Camera Feed
+To visualize the robot’s camera stream, open a second terminal (on the Jetson or a PC with ROS 2 and GUI support):
+
+```bash
+ros2 run rqt_image_view rqt_image_view
+```
 
 --
 ## 🎥 Demonstration
