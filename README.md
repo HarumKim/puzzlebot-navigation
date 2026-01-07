@@ -90,10 +90,4 @@ This launch file automatically starts the main nodes of the system. Once launche
 ### 🎥 Full Autonomous Navigation Demo  
 Shows **line following**, **traffic sign reactions**, and **traffic light handling**.
 
-<p align="center">
-  <a href="https://youtu.be/AYWiGJdpJkY">
-    <img src="https://img.youtube.com/vi/AYWiGJdpJkY/0.jpg"
-         alt="Puzzlebot Autonomous Navigation Demo"
-         width="480">
-  </a>
-</p>
+[![Autonomous Navigation Demo](https://img.youtube.com/vi/AYWiGJdpJkY/0.jpg)](https://youtu.be/AYWiGJdpJkY)
